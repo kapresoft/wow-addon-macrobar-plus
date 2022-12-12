@@ -39,3 +39,17 @@ luac.out
 *.x86_64
 *.hex
 
+# IDE's
+*.iml
+/.idea/
+/.history/
+/.vscode/
+
+# BigWigMods/packager
+/.release/
+Core/ExtLib/WowAce/*
+Core/ExtLib/Kapresoft-LibUtil/*
+!Core/ExtLib/pprint/
+!Core/ExtLib/_ExtLib.xml
+!Core/ExtLib/WowAce/_WowAce.xml
+Core/Interface/Kapresoft-Wow-Api-Interface/
