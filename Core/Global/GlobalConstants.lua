@@ -1,12 +1,17 @@
-if type(SDNR_DB) ~= "table" then SDNR_DB = {} end
-if type(SDNR_LOG_LEVEL) ~= "number" then SDNR_LOG_LEVEL = 1 end
-if type(SDNR_DEBUG_MODE) ~= "boolean" then SDNR_DEBUG_MODE = false end
-
+if type(MBP_DB) ~= "table" then MBP_DB = {} end
+if type(MBP_LOG_LEVEL) ~= "number" then MBP_LOG_LEVEL = 1 end
+if type(MBP_DEBUG_MODE) ~= "boolean" then MBP_DEBUG_MODE = false end
 
 --[[-----------------------------------------------------------------------------
 Lua Vars
 -------------------------------------------------------------------------------]]
 local sformat = string.format
+
+--[[-----------------------------------------------------------------------------
+Blizzard Vars
+-------------------------------------------------------------------------------]]
+local GetAddOnMetadata = GetAddOnMetadata
+local date = date
 
 --[[-----------------------------------------------------------------------------
 Local Vars
@@ -18,11 +23,13 @@ local ns
 addon, ns = ...
 
 local pformat = Kapresoft_LibUtil.PrettyPrint.pformat
-local addonShortName = 'SavedDNR'
+local addonShortName = 'MacrobarPlus'
+local consoleCommand = "mbp"
 local useShortName = true
 
 local LibStub = LibStub
 
+local ADDON_INFO_FMT = '%s|cfdeab676: %s|r'
 local TOSTRING_ADDON_FMT = '|cfdfefefe{{|r|cfdeab676%s|r|cfdfefefe}}|r'
 local TOSTRING_SUBMODULE_FMT = '|cfdfefefe{{|r|cfdeab676%s|r|cfdfefefe::|r|cfdfbeb2d%s|r|cfdfefefe}}|r'
 
@@ -42,13 +49,14 @@ local function ToStringFunction(moduleName)
     return function() return string.format(TOSTRING_ADDON_FMT, name) end
 end
 
----@class LocalLibStub
+---@class LocalLibStub : LibStub
 local S = {}
 
 ---@param moduleName string
 ---@param optionalMinorVersion number
 function S:NewLibrary(moduleName, optionalMinorVersion)
-    --use Ace3 LibStub here
+    ---use Ace3 LibStub here
+    ---@type BaseLibraryObject
     local o = LibStub:NewLibrary(LibName(moduleName), optionalMinorVersion or 1)
     assert(o, sformat("Module not found: %s", tostring(moduleName)))
     o.mt = getmetatable(o) or {}
@@ -68,15 +76,114 @@ function S:GetLibrary(moduleName, optionalMinorVersion) return LibStub(LibName(m
 S.mt = { __call = function (_, ...) return S:GetLibrary(...) end }
 setmetatable(S, S.mt)
 
+--[[-----------------------------------------------------------------------------
+GlobalConstants
+-------------------------------------------------------------------------------]]
 ---@class GlobalConstants
 local L = LibStub:NewLibrary(LibName('GlobalConstants'), 1)
 
 ---@param o GlobalConstants
+local function GlobalConstantProperties(o)
+
+    local consoleCommandTextFormat = '|cfd2db9fb%s|r'
+    local consoleKeyValueTextFormat = '|cfdfbeb2d%s|r: %s'
+    local command = sformat("/%s", consoleCommand)
+
+    ---@class GlobalAttributes
+    local C = {
+        DB_NAME = 'MBP_DB',
+        CHECK_VAR_SYNTAX_FORMAT = '|cfdeab676%s ::|r %s',
+        CONSOLE_HEADER_FORMAT = '|cfdeab676### %s ###|r',
+        CONSOLE_OPTIONS_FORMAT = '  - %-8s|cfdeab676:: %s|r',
+
+        CONSOLE_COMMAND_TEXT_FORMAT = consoleCommandTextFormat,
+        CONSOLE_KEY_VALUE_TEXT_FORMAT = consoleKeyValueTextFormat,
+
+        CONSOLE_PLAIN = command,
+        COMMAND      = sformat(consoleCommandTextFormat, command),
+        HELP_COMMAND = sformat(consoleCommandTextFormat, command .. ' help'),
+    }
+
+    ---@class EventNames
+    local E = {
+        OnEnter = 'OnEnter',
+        OnEvent = 'OnEvent',
+        OnLeave = 'OnLeave',
+        OnModifierStateChanged = 'OnModifierStateChanged',
+        OnDragStart = 'OnDragStart',
+        OnDragStop = 'OnDragStop',
+        OnMouseUp = 'OnMouseUp',
+        OnMouseDown = 'OnMouseDown',
+        OnReceiveDrag = 'OnReceiveDrag',
+
+        PLAYER_ENTERING_WORLD = 'PLAYER_ENTERING_WORLD',
+    }
+    local function newMessage(name) return sformat('%s::' .. name, addonShortName)  end
+    ---@class MessageNames
+    local M = {
+        OnAfterInitialize = newMessage('OnAfterInitialize'),
+        OnAddonReady = newMessage('OnAddonReady'),
+    }
+
+    o.C = C
+    o.E = E
+    o.M = M
+
+end
+
+---@param o GlobalConstants
 local function Methods(o)
     --  TODO
+
+    function o:GetLogName()
+        local logName = addon
+        if useShortName then logName = addonShortName end
+        return logName
+    end
+
+    ---#### Example
+    ---```
+    ---local version, curseForge, issues, repo, lastUpdate, wowInterfaceVersion = GC:GetAddonInfo()
+    ---```
+    ---@return string, string, string, string, string, string
+    function o:GetAddonInfo()
+        local versionText, lastUpdate
+        --@non-debug@
+        versionText = GetAddOnMetadata(ns.name, 'Version')
+        lastUpdate = GetAddOnMetadata(ns.name, 'X-Github-Project-Last-Changed-Date')
+        --@end-non-debug@
+        --@debug@
+        versionText = '1.0.x.dev'
+        lastUpdate = date("%m/%d/%y %H:%M:%S")
+        --@end-debug@
+        local wowInterfaceVersion = select(4, GetBuildInfo())
+
+        return versionText, GetAddOnMetadata(ns.name, 'X-CurseForge'),
+            GetAddOnMetadata(ns.name, 'X-Github-Issues'),
+            GetAddOnMetadata(ns.name, 'X-Github-Repo'),
+            lastUpdate, wowInterfaceVersion
+    end
+
+    function o:GetAddonInfoFormatted()
+        local version, curseForge, issues, repo, lastUpdate, wowInterfaceVersion = self:GetAddonInfo()
+        --p:log("Addon Info:\n  Version: %s\n  Curse-Forge: %s\n  File-Bugs-At: %s\n  Last-Changed-Date: %s\n  WoW-Interface-Version: %s\n",
+        --        version, curseForge, issues, lastChanged, wowInterfaceVersion)
+        return sformat("Addon Info:\n%s\n%s\n%s\n%s\n%s\n%s",
+                sformat(ADDON_INFO_FMT, 'Version', version),
+                sformat(ADDON_INFO_FMT, 'Curse-Forge', curseForge),
+                sformat(ADDON_INFO_FMT, 'Bugs', issues),
+                sformat(ADDON_INFO_FMT, 'Repo', repo),
+                sformat(ADDON_INFO_FMT, 'Last-Update', lastUpdate),
+                sformat(ADDON_INFO_FMT, 'Interface-Version', wowInterfaceVersion)
+        )
+    end
+
 end
+
+GlobalConstantProperties(L)
 Methods(L)
 
 ns.LibName = LibName
 ns.ToStringFunction = ToStringFunction
+---@type LocalLibStub
 ns.LibStub = S

@@ -44,16 +44,8 @@ luac.out
 /.idea/
 /.history/
 /.vscode/
-/Core/ExtLib/.Ace3.*
 
 # BigWigMods/packager
-/.release/
-/Core/ExtLib/*
-
-!/Core/ExtLib/pprint/
-!/Core/ExtLib/_ExtLib.lua
-!/Core/ExtLib/ExtLib.lua
-!/Core/ExtLib/_WowAce.xml
-
-
-/Core/Interface/Kapresoft-Wow-Api-Interface/
+/build
+/.release
+/Core/ExtLib

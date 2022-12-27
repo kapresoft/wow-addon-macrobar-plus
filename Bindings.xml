@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="MBP_OPTIONS_DLG" category="AddOns/MacrobarPlus" header="MBP_OPTIONS">
+        MBP:BINDING_MBP_OPTIONS_DLG();
+    </Binding>
+</Bindings>

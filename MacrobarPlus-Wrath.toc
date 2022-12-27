@@ -1,6 +1,6 @@
 ## Interface: 30400
 ## Version: @project-version@
-## Title: Macrobar|cff1784d1Plus|r Retail
+## Title: Macrobar|cff1784d1Plus|r WOTLK
 ## Notes: Macro actionbar addon for World of Warcraft
 ## Author: kapresoft@gmail.com
 ## DefaultState: enabled

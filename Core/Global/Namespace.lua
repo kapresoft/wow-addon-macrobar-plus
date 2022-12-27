@@ -1,8 +1,9 @@
 --[[-----------------------------------------------------------------------------
 Local Vars
 -------------------------------------------------------------------------------]]
----@class LibStub
+---@type LibStub
 local LibStub = LibStub
+
 ---@type Kapresoft_LibUtil_Objects
 local LibUtil = Kapresoft_LibUtil
 
@@ -17,7 +18,7 @@ local NamespaceObject = {
     ---local GC = LibStub(LibName('GlobalConstants'), 1)
     ---```
     ---@type fun(moduleName:string, optionalMajorVersion:string)
-    ---@return string The full LibStub library name. Example:  '[AddonName]-GlobalConstants-1.0.1'
+    ---@return string The full LibStub library name. Example:  'MacrobarPlus-GlobalConstants-1.0.1'
     LibName = {},
     ---Usage:
     ---```
@@ -27,14 +28,6 @@ local NamespaceObject = {
     ---```
     ---@type fun(moduleName:string)
     ToStringFunction = {}
-}
-
----@class AceConsole
-local AceConsole_Interface = {
-    -- Embeds AceConsole into the target object making the functions from the mixins list available on target:..
-    ---@param self AceConsole
-    ---@param target any object to embed AceBucket in
-    Embed = function(self, target)  end
 }
 
 ---@type string
@@ -48,15 +41,14 @@ local LibName = ns.LibName
 --[[-----------------------------------------------------------------------------
 GlobalObjects
 -------------------------------------------------------------------------------]]
+
 ---@class GlobalObjects
 local GlobalObjects = {
-    ---@type AceConsole
-    AceConsole = {},
-
-    ---@type GlobalConstants
-    GlobalConstants = {},
-    ---@type Logger
-    Logger = {},
+    --AceLib = AceObjects,
+    ---@type Kapresoft_LibUtil_AceLibraryObjects
+    AceLibrary = {},
+    ---@type LibStub
+    AceLibStub = {},
 
     ---@type fun(fmt:string, ...)|fun(val:string)
     pformat = {},
@@ -65,25 +57,33 @@ local GlobalObjects = {
 
     ---@type Kapresoft_LibUtil_Objects
     LU = {},
-    ---@type Kapresoft_LibUtil_PrettyPrint
-    PrettyPrint = {},
-    ---@type Kapresoft_LibUtil_Assert
-    Assert = {},
-    ---@type Kapresoft_LibUtil_Incrementer
-    Incrementer = {},
-    ---@type Kapresoft_LibUtil_LuaEvaluator
-    LuaEvaluator = {},
-    ---@type Kapresoft_LibUtil_Mixin
-    Mixin = {},
-    ---@type Kapresoft_LibUtil_String
-    String = {},
-    ---@type Kapresoft_LibUtil_Table
-    Table = {},
+    -----@type Kapresoft_LibUtil_PrettyPrint
+    --PrettyPrint = {},
+    -----@type Kapresoft_LibUtil_Assert
+    --Assert = {},
+    -----@type Kapresoft_LibUtil_Incrementer
+    --Incrementer = {},
+    -----@type Kapresoft_LibUtil_LuaEvaluator
+    --LuaEvaluator = {},
+    -----@type Kapresoft_LibUtil_Mixin
+    --Mixin = {},
+    -----@type Kapresoft_LibUtil_String
+    --String = {},
+    -----@type Kapresoft_LibUtil_Table
+    --Table = {},
 
+    ---@type AceDbInitializerMixin
+    AceDbInitializerMixin = {},
     ---@type Core
     Core = {},
-    ---@type Wrapper
-    Wrapper = {},
+    ---@type GlobalConstants
+    GlobalConstants = {},
+    ---@type Logger
+    Logger = {},
+    ---@type MainEventHandler
+    MainEventHandler = {},
+    ---@type OptionsMixin
+    OptionsMixin = {},
 }
 --[[-----------------------------------------------------------------------------
 Modules
@@ -91,30 +91,41 @@ Modules
 
 ---@class Modules
 local M = {
+    AceLibStub = 'AceLibStub',
     LU = 'LU',
     pformat = 'pformat',
     sformat = 'sformat',
-    GlobalConstants = 'GlobalConstants',
+    AceLibrary = 'AceLibrary',
+
+    AceDbInitializerMixin = 'AceDbInitializerMixin',
+    API = 'API',
     Core = 'Core',
-    AceConsole = 'AceConsole',
+    GlobalConstants = 'GlobalConstants',
     Logger = 'Logger',
-    Wrapper = 'Wrapper',
+    MainEventHandler = 'MainEventHandler',
+    OptionsMixin = 'OptionsMixin',
 }
 
 local InitialModuleInstances = {
+    -- External Libs --
     LU = LibUtil,
-    GlobalConstants = LibStub(LibName('GlobalConstants')),
-    AceConsole = LibStub('AceConsole-3.0'),
+    AceLibrary = LibUtil.AceLibrary.O,
+    AceLibStub = LibStub,
+    -- Internal Libs --
+    GlobalConstants = LibStub(LibName(M.GlobalConstants)),
     pformat = PrettyPrint.pformat,
 }
 
+---@type GlobalConstants
+local GC = LibStub(LibName(M.GlobalConstants))
+
 ---Usage:
 ---```
----local O, LibStub = SDNR_Namespace(...)
+---local O, LibStub = MBP_Namespace(...)
 ---local AceConsole = O.AceConsole
 ---```
 ---@return Namespace
-function SDNR_Namespace(...)
+function MBP_Namespace(...)
     ---@type string
     local addon
     ---@type Namespace
@@ -126,6 +137,8 @@ function SDNR_Namespace(...)
     namespace.O = namespace.O or {}
     ---@type string
     namespace.name = addon
+    ---@type string
+    namespace.nameShort = GC:GetLogName()
 
     if 'table' ~= type(namespace.O) then namespace.O = {} end
 
@@ -142,8 +155,13 @@ function SDNR_Namespace(...)
     local pformat = namespace.pformat
     local getSortedKeys = namespace.O.Table.getSortedKeys
 
-    ---@return GlobalObjects, LocalLibStub, Modules
-    function namespace:LibPack() return self.O, ns.LibStub, M end
+    ---Example:
+    ---```
+    ---local O, LibStub, M, ns = MBP_Namespace(...):LibPack()
+    ---```
+    ---@return GlobalObjects, LocalLibStub, Modules, Namespace
+    function namespace:LibPack() return self.O, ns.LibStub, M, self end
+
     ---@param libName string The library name. Ex: 'GlobalConstants'
     ---@param o table The library object instance
     function namespace:Register(libName, o)
@@ -158,7 +176,6 @@ function SDNR_Namespace(...)
 
     return namespace
 end
+---@return GlobalObjects, LocalLibStub, Modules, Namespace
+function MBP_LibPack(...) return MBP_Namespace(...):LibPack() end
 
-
----@type Modules
-SDNR_Modules = M
