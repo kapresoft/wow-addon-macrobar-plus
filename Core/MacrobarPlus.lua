@@ -10,7 +10,7 @@ local LibStub = LibStub
 local ns = MBP_Namespace(...)
 local O, LibStubLocal, M = ns:LibPack()
 local GC, ACE, Table, String = O.GlobalConstants, O.AceLibrary, O.LU.Table, O.LU.String
-local AceConfig, AceConfigDialog = ACE.AceConfig, ACE.AceConfigDialog
+local AceConfigDialog = ACE.AceConfigDialog
 local toStringSorted, pformat = Table.toStringSorted, O.pformat
 local IsBlank, IsAnyOf, IsEmptyTable = String.IsBlank, String.IsAnyOf, Table.isEmpty
 
@@ -49,7 +49,7 @@ local function Methods(o)
     function o:SlashCommand_OpenConfig() o:OpenConfig() end
 
     function o:RegisterSlashCommands()
-        self:RegisterChatCommand("mbp", "SlashCommands")
+        self:RegisterChatCommand(GC.C.CONSOLE_COMMAND_NAME, "SlashCommands")
     end
 
     ---@param spaceSeparatedArgs string
@@ -64,9 +64,6 @@ local function Methods(o)
         if IsAnyOf('info', unpack(args)) then
             self:SlashCommand_InfoHandler(); return
         end
-        if IsAnyOf('list', unpack(args)) then
-            self:SlashCommand_ListSavedInstances(); return
-        end
         -- Otherwise, show help
         self:SlashCommand_Help_Handler()
     end
@@ -74,13 +71,13 @@ local function Methods(o)
     function o:SlashCommand_Help_Handler()
         p:log('')
         local COMMAND_INFO_TEXT = ":: Prints additional addon info"
-        local COMMAND_LIST_TEXT = ":: Prints the saved dungeons and raids on the console"
+        local COMMAND_CONFIG_TEXT = ":: Shows the config UI"
         local COMMAND_HELP_TEXT = ":: Shows this help"
         local OPTIONS_LABEL = "options"
         local USAGE_LABEL = sformat("usage: %s [%s]", GC.C.CONSOLE_PLAIN, OPTIONS_LABEL)
         p:log(USAGE_LABEL)
         p:log(OPTIONS_LABEL .. ":")
-        p:log(GC.C.CONSOLE_OPTIONS_FORMAT, 'list', COMMAND_LIST_TEXT)
+        p:log(GC.C.CONSOLE_OPTIONS_FORMAT, 'config', COMMAND_CONFIG_TEXT)
         --p:log(GC.C.CONSOLE_OPTIONS_FORMAT, 'config', COMMAND_CONFIG_TEXT)
         p:log(GC.C.CONSOLE_OPTIONS_FORMAT, 'info', COMMAND_INFO_TEXT)
         p:log(GC.C.CONSOLE_OPTIONS_FORMAT, 'help', COMMAND_HELP_TEXT)

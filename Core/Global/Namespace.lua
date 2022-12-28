@@ -57,20 +57,6 @@ local GlobalObjects = {
 
     ---@type Kapresoft_LibUtil_Objects
     LU = {},
-    -----@type Kapresoft_LibUtil_PrettyPrint
-    --PrettyPrint = {},
-    -----@type Kapresoft_LibUtil_Assert
-    --Assert = {},
-    -----@type Kapresoft_LibUtil_Incrementer
-    --Incrementer = {},
-    -----@type Kapresoft_LibUtil_LuaEvaluator
-    --LuaEvaluator = {},
-    -----@type Kapresoft_LibUtil_Mixin
-    --Mixin = {},
-    -----@type Kapresoft_LibUtil_String
-    --String = {},
-    -----@type Kapresoft_LibUtil_Table
-    --Table = {},
 
     ---@type AceDbInitializerMixin
     AceDbInitializerMixin = {},

@@ -1,7 +1,3 @@
-if type(MBP_DB) ~= "table" then MBP_DB = {} end
-if type(MBP_LOG_LEVEL) ~= "number" then MBP_LOG_LEVEL = 1 end
-if type(MBP_DEBUG_MODE) ~= "boolean" then MBP_DEBUG_MODE = false end
-
 --[[-----------------------------------------------------------------------------
 Lua Vars
 -------------------------------------------------------------------------------]]
@@ -16,6 +12,8 @@ local date = date
 --[[-----------------------------------------------------------------------------
 Local Vars
 -------------------------------------------------------------------------------]]
+local LibStub = LibStub
+
 ---@type string
 local addon
 ---@type Namespace
@@ -25,14 +23,21 @@ addon, ns = ...
 local pformat = Kapresoft_LibUtil.PrettyPrint.pformat
 local addonShortName = 'MacrobarPlus'
 local consoleCommand = "mbp"
+local globalVarName = "MBP"
 local useShortName = true
 
-local LibStub = LibStub
+local globalVarPrefix = globalVarName .. "_"
+local dbName = globalVarPrefix .. 'DB'
+local logLevel = globalVarPrefix .. 'LOG_LEVEL'
+local debugMode = globalVarPrefix .. 'DEBUG_MODE'
 
 local ADDON_INFO_FMT = '%s|cfdeab676: %s|r'
 local TOSTRING_ADDON_FMT = '|cfdfefefe{{|r|cfdeab676%s|r|cfdfefefe}}|r'
 local TOSTRING_SUBMODULE_FMT = '|cfdfefefe{{|r|cfdeab676%s|r|cfdfefefe::|r|cfdfbeb2d%s|r|cfdfefefe}}|r'
 
+--[[-----------------------------------------------------------------------------
+Support Functions
+-------------------------------------------------------------------------------]]
 ---@param moduleName string
 ---@param optionalMajorVersion number|string
 local function LibName(moduleName, optionalMajorVersion)
@@ -48,6 +53,13 @@ local function ToStringFunction(moduleName)
     if moduleName then return function() return string.format(TOSTRING_SUBMODULE_FMT, name, moduleName) end end
     return function() return string.format(TOSTRING_ADDON_FMT, name) end
 end
+local function InitGlobalVars()
+    if 'table' ~= type(_G[dbName]) then _G[dbName] = {} end
+    if 'number' ~= type(_G[logLevel]) then _G[logLevel] = 1 end
+    if 'boolean' ~= type(_G[debugMode]) then _G[debugMode] = false end
+end
+InitGlobalVars()
+
 
 ---@class LocalLibStub : LibStub
 local S = {}
@@ -91,7 +103,9 @@ local function GlobalConstantProperties(o)
 
     ---@class GlobalAttributes
     local C = {
-        DB_NAME = 'MBP_DB',
+        VAR_NAME = globalVarName,
+        CONSOLE_COMMAND_NAME = consoleCommand,
+        DB_NAME = dbName,
         CHECK_VAR_SYNTAX_FORMAT = '|cfdeab676%s ::|r %s',
         CONSOLE_HEADER_FORMAT = '|cfdeab676### %s ###|r',
         CONSOLE_OPTIONS_FORMAT = '  - %-8s|cfdeab676:: %s|r',

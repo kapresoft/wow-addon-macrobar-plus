@@ -58,13 +58,13 @@ local function Methods(o)
 
     function o:InitDbDefaults()
         local profileName = self.addon.db:GetCurrentProfile()
-        local defaultProfile = {}
+        local defaultProfile = { enable = true }
         local defaults = { profile = defaultProfile }
         self.db:RegisterDefaults(defaults)
         self.addon.profile = self.db.profile
         local wowDB = _G[GC.C.DB_NAME]
         if IsEmptyTable(wowDB.profiles[profileName]) then wowDB.profiles[profileName] = defaultProfile end
-        self.addon.profile.enable = false
+        self.addon.profile.enable = true
         p:log(5, 'Profile: %s', self.db:GetCurrentProfile())
     end
 end
