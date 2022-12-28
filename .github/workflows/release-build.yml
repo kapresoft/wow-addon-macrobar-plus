@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  addonName: AddonTemplate
+  addonName: MacrobarPlus
   curseForgeProjectId: 704035
   uploadBuildArtifacts: true
   createDraftRelease: true
