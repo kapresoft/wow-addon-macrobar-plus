@@ -6,15 +6,32 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      createDraftRelease:
+        description: 'Create Github Release Draft'
+        required: true
+        default: true
+        type: boolean
+      uploadCurseForge:
+        description: 'Upload to CurseForge.com'
+        default: true
+        type: boolean
+      uploadWowInterface:
+        description: 'Upload to WoWInterface.com'
+        default: false
+        type: boolean
 
 env:
   addonName: MacrobarPlus
   curseForgeProjectId: 704035
+  wowInterfaceProjectId: -1
   uploadBuildArtifacts: true
-  createDraftRelease: true
   artifact_retentionDays: 7
   releaseDir: ./.release
   refName: ${{ github.ref_name }}
+  createDraftRelease: true
+  uploadCurseForge: true
+  uploadWowInterface: true
 
 jobs:
   build:
@@ -25,11 +42,18 @@ jobs:
       ## ------------------------------------------------ ##
       ## See: https://github.com/actions/github-script
       - name: "Set Env Variable: GITHUB_SHA_SHORT"
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           script: |
             const sha = context.sha.substring(0, 7)
             core.exportVariable('GITHUB_SHA_SHORT', sha)
+      ## ------------------------------------------------ ##
+      - name: "Set ENV for manual triggers (workflow_dispatch)"
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo createDraftRelease="${{ inputs.createDraftRelease }}" >> $GITHUB_ENV
+          echo uploadCurseForge="${{ inputs.uploadCurseForge }}" >> $GITHUB_ENV
+          echo uploadWowInterface="${{ inputs.uploadWowInterface }}" >> $GITHUB_ENV
       ## ------------------------------------------------ ##
       - name: "Set ENV Var Option to Skip Uploads on Branch Builds and refName"
         if: ${{ github.ref_type == 'branch' }}
@@ -47,11 +71,29 @@ jobs:
         run: |
           echo buildArtifact="${releaseDir}/${buildArtifactFilename}" >> $GITHUB_ENV
           echo buildArtifactChecksumFile="${releaseDir}/${buildArtifactChecksumFilename}" >> $GITHUB_ENV
+      - name: "Set ENV Variable: Upload to CurseForge"
+        if: ${{ env.uploadCurseForge != 'false' }}
+        run: |
+          echo uploadCurseForge="${uploadCurseForge}"
+          echo bigWigsUploads="${bigWigsUploads} -p ${curseForgeProjectId}" >> $GITHUB_ENV
+          echo CF_API_KEY="${{ secrets.CF_API_KEY }}" >> $GITHUB_ENV
+      - name: "Set ENV Variable: Upload to WowInterface"
+        if: ${{ env.uploadWowInterface != 'false' }}
+        run: |
+          echo uploadWowInterface="${uploadWowInterface}"
+          echo bigWigsUploads="${bigWigsUploads} -w ${wowInterfaceProjectId}" >> $GITHUB_ENV
+          echo WOWI_API_TOKEN="${{ secrets.WOWI_API_TOKEN }}" >> $GITHUB_ENV
+
       ## ------------------------------------------------ ##
       - name: Print Environment Variables
         run: |
           echo HOME=${HOME}
+          echo -------------------------------
+          echo uploadCurseForge=${uploadCurseForge}
+          echo uploadWowInterface=${uploadWowInterface}
           echo createDraftRelease=${createDraftRelease}
+          echo -------------------------------
+          echo bigWigsUploads=${bigWigsUploads}
           echo releaseDir=${releaseDir}
           echo refName=${refName}
           echo packagerOptions=${packagerOptions}
@@ -61,8 +103,8 @@ jobs:
           echo buildBasePath=${buildBasePath}
           echo buildArtifactFilename=${buildArtifactFilename}
           echo buildArtifactChecksumFilename=${buildArtifactChecksumFilename}
-          echo artifact_retentionDays=${{ env.artifact_retentionDays }}
-          echo "------------------------"
+          echo artifact_retentionDays=${artifact_retentionDays}
+          echo -------------------------------
           echo "All ENV Vars:"
           echo "$(env|sort)"
       ## ------------------------------------------------ ##
@@ -71,10 +113,8 @@ jobs:
       ## ------------------------------------------------ ##
       ## see: https://github.com/marketplace/actions/wow-packager
       - uses: BigWigsMods/packager@v2
-        env:
-          CF_API_KEY: ${{ secrets.CF_API_KEY }}
         with:
-          args: -r ${releaseDir} -p ${curseForgeProjectId} ${packagerOptions}
+          args: -r ${releaseDir} ${bigWigsUploads} ${packagerOptions}
       ## ------------------------------------------------ ##
       - name: "Verify Build Artifact Exists: ${{ env.buildArtifact }}"
         uses: andstor/file-existence-action@v2
@@ -114,13 +154,12 @@ jobs:
       ## ------------------------------------------------ ##
       - name: Notices
         run: |
-          echo -e "::notice::HOME=${HOME}\n::notice::buildArtifact=${buildArtifact}"
-          echo "::notice::buildArtifactChecksumFile=${buildArtifactChecksumFile}"
-          echo "::notice::buildArtifact=${buildArtifact} Checksum=${buildArtifactChecksum}"
+          echo ::notice::Uploads CurseForge=${uploadCurseForge}, WoWInterface=${uploadWowInterface}, BigWigs-UploadOptions=${bigWigsUploads}
+          echo ::notice::Build Artifact=${buildArtifactFilename}, Checksum=${buildArtifactChecksum}
 
       - name: Create a draft release
         id: create_draft_release
-        if: ${{ env.createDraftRelease == 'true' }}
+        if: ${{ env.createDraftRelease != 'false' }}
         uses: release-drafter/release-drafter@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
