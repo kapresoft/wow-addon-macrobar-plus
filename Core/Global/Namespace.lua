@@ -1,76 +1,22 @@
 --[[-----------------------------------------------------------------------------
-Local Vars
+Blizzard Vars
 -------------------------------------------------------------------------------]]
----@type LibStub
-local LibStub = LibStub
-
----@type Kapresoft_LibUtil_Objects
-local LibUtil = Kapresoft_LibUtil
-
----@type Kapresoft_LibUtil_PrettyPrint
-local PrettyPrint = Kapresoft_LibUtil.PrettyPrint
-PrettyPrint.setup({ show_function = true, show_metatable = true, indent_size = 2, depth_limit = 3 })
-
----@class Namespace
-local NamespaceObject = {
-    ---Usage:
-    ---```
-    ---local GC = LibStub(LibName('GlobalConstants'), 1)
-    ---```
-    ---@type fun(moduleName:string, optionalMajorVersion:string)
-    ---@return string The full LibStub library name. Example:  'MacrobarPlus-GlobalConstants-1.0.1'
-    LibName = {},
-    ---Usage:
-    ---```
-    ---local L = {}
-    ---local mt = { __tostring = ns.ToStringFunction() }
-    ---setmetatable(mt, L)
-    ---```
-    ---@type fun(moduleName:string)
-    ToStringFunction = {}
-}
-
----@type string
-local addonName
----@type Namespace
-local ns
-addonName, ns = ...
-
-local LibName = ns.LibName
+--- @see BlizzardInterfaceCode:Interface/SharedXML/Mixin.lua
+--- @class _Mixin
+local Mixin = Mixin
 
 --[[-----------------------------------------------------------------------------
-GlobalObjects
+Local Vars
 -------------------------------------------------------------------------------]]
+--- @type Namespace
+local addonName, _ns = ...
+local K = _ns.Kapresoft_LibUtil
+--- @type GlobalConstants
+local GC = LibStub(addonName .. '-GlobalConstants-1.0')
 
----@class GlobalObjects
-local GlobalObjects = {
-    --AceLib = AceObjects,
-    ---@type Kapresoft_LibUtil_AceLibraryObjects
-    AceLibrary = {},
-    ---@type LibStub
-    AceLibStub = {},
+--- @type LibStub
+local LibStub = LibStub
 
-    ---@type fun(fmt:string, ...)|fun(val:string)
-    pformat = {},
-    ---@type fun(fmt:string, ...)|fun(val:string)
-    sformat = {},
-
-    ---@type Kapresoft_LibUtil_Objects
-    LU = {},
-
-    ---@type AceDbInitializerMixin
-    AceDbInitializerMixin = {},
-    ---@type Core
-    Core = {},
-    ---@type GlobalConstants
-    GlobalConstants = {},
-    ---@type Logger
-    Logger = {},
-    ---@type MainEventHandler
-    MainEventHandler = {},
-    ---@type OptionsMixin
-    OptionsMixin = {},
-}
 --[[-----------------------------------------------------------------------------
 Modules
 -------------------------------------------------------------------------------]]
@@ -78,7 +24,6 @@ Modules
 ---@class Modules
 local M = {
     AceLibStub = 'AceLibStub',
-    LU = 'LU',
     pformat = 'pformat',
     sformat = 'sformat',
     AceLibrary = 'AceLibrary',
@@ -94,16 +39,82 @@ local M = {
 
 local InitialModuleInstances = {
     -- External Libs --
-    LU = LibUtil,
-    AceLibrary = LibUtil.AceLibrary.O,
+    AceLibrary = K.Objects.AceLibrary.O,
     AceLibStub = LibStub,
     -- Internal Libs --
-    GlobalConstants = LibStub(LibName(M.GlobalConstants)),
-    pformat = PrettyPrint.pformat,
+    GlobalConstants = LibStub(GC.LibName(M.GlobalConstants)),
+    sformat = string.format,
+    pformat = K.pformat,
 }
 
----@type GlobalConstants
-local GC = LibStub(LibName(M.GlobalConstants))
+--- Some Utility Methods to make things easier to access the Library
+--- @class Kapresoft_LibUtil_Mixins
+local Kapresoft_LibUtil_Mixins = {
+    K = function(self) return self.Kapresoft_LibUtil end,
+    KO = function(self) return self.Kapresoft_LibUtil.Objects  end,
+}
+
+---@param o Namespace
+local function InitLocalLibStub(o)
+    --- @class LocalLibStub : Kapresoft_LibUtil_LibStubMixin
+    local LocalLibStub = o:K().Objects.LibStubMixin:New(o.name, 1.0,
+            function(name, newLibInstance)
+                --- @type Logger
+                local loggerLib = o:KO().LoggerMixin
+                if loggerLib then
+                    newLibInstance.logger = loggerLib:NewLogger(o.name, GC.C.LOG_LEVEL_VAR_NAME , GC.C.COLOR_DEF, name)
+                    newLibInstance.logger:log( 'New Lib: %s', newLibInstance.major)
+                    function newLibInstance:GetLogger() return self.logger end
+                end
+                o:Register(name, newLibInstance)
+            end)
+    o.LibStub = LocalLibStub
+    o.O.LibStub = LocalLibStub
+end
+
+---@param o Namespace
+local function NameSpacePropertiesAndMethods(o)
+
+    Mixin(o, Kapresoft_LibUtil_Mixins)
+
+    local getSortedKeys = o:KO().Table.getSortedKeys
+
+    --- @type string
+    o.nameShort = GC:GetLogName()
+
+    if 'table' ~= type(o.O) then o.O = {} end
+
+    for key, _ in pairs(M) do
+        local lib = InitialModuleInstances[key]
+        if lib then o.O[key] = lib end
+    end
+
+    o.pformat = o.O.pformat
+    o.sformat = o.O.sformat
+    o.M = M
+
+    if not _G['pformat'] then _G['pformat'] = o.pformat end
+
+    --- @param moduleName string The module name, i.e. Logger
+    --- @param optionalMajorVersion number|string
+    --- @return string The complete module name, i.e. 'ActionbarPlus-Logger-1.0'
+    function o:LibName(moduleName, optionalMajorVersion) return GC.LibName(moduleName, optionalMajorVersion) end
+    --- @param moduleName string The module name, i.e. Logger
+    function o:ToStringFunction(moduleName) return GC.ToStringFunction(moduleName) end
+
+    --- @param obj table The library object instance
+    function o:Register(libName, obj)
+        if not (libName or obj) then return end
+        self.O[libName] = obj
+    end
+
+    --- @param libName string The library name. Ex: 'GlobalConstants'
+    function o:NewLogger(libName) return self.O.Logger:NewLogger(libName) end
+    function o:ToStringNamespaceKeys() return self.pformat(getSortedKeys(self)) end
+    function o:ToStringObjectKeys() return self.pformat(getSortedKeys(self.O)) end
+
+    InitLocalLibStub(o)
+end
 
 ---Usage:
 ---```
@@ -111,57 +122,24 @@ local GC = LibStub(LibName(M.GlobalConstants))
 ---local AceConsole = O.AceConsole
 ---```
 ---@return Namespace
-function MBP_Namespace(...)
+local function CreateNamespace(_addonName, _namespace)
     ---@type string
-    local addon
+    local addon = _addonName
     ---@type Namespace
-    local namespace
-    addon, namespace = ...
-
+    local ns = _namespace
 
     ---@type GlobalObjects
-    namespace.O = namespace.O or {}
+    ns.O = ns.O or {}
     ---@type string
-    namespace.name = addon
-    ---@type string
-    namespace.nameShort = GC:GetLogName()
+    ns.name = addon
 
-    if 'table' ~= type(namespace.O) then namespace.O = {} end
+    NameSpacePropertiesAndMethods(ns)
 
-    for key, val in pairs(LibUtil) do namespace.O[key] = val end
-    for key, _ in pairs(M) do
-        local lib = InitialModuleInstances[key]
-        if lib then namespace.O[key] = lib end
+    ns.mt = { __tostring = function() return addon .. '::Namespace'  end }
+    setmetatable(ns, ns.mt)
+
+    return ns
     end
 
-    namespace.pformat = namespace.O.pformat
-    namespace.sformat = namespace.O.sformat
-    namespace.M = M
-
-    local pformat = namespace.pformat
-    local getSortedKeys = namespace.O.Table.getSortedKeys
-
-    ---Example:
-    ---```
-    ---local O, LibStub, M, ns = MBP_Namespace(...):LibPack()
-    ---```
-    ---@return GlobalObjects, LocalLibStub, Modules, Namespace
-    function namespace:LibPack() return self.O, ns.LibStub, M, self end
-
-    ---@param libName string The library name. Ex: 'GlobalConstants'
-    ---@param o table The library object instance
-    function namespace:Register(libName, o)
-        if not (libName or o) then return end
-        self.O[libName] = o
-    end
-
-    ---@param libName string The library name. Ex: 'GlobalConstants'
-    function namespace:NewLogger(libName) return self.O.Logger:NewLogger(libName) end
-    function namespace:ToStringNamespaceKeys() return pformat(getSortedKeys(ns)) end
-    function namespace:ToStringObjectKeys() return pformat(getSortedKeys(ns.O)) end
-
-    return namespace
-end
----@return GlobalObjects, LocalLibStub, Modules, Namespace
-function MBP_LibPack(...) return MBP_Namespace(...):LibPack() end
+if _ns.name then return end; CreateNamespace(addonName, _ns)
 

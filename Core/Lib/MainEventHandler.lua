@@ -12,10 +12,12 @@ local RegisterFrameForEvents, RegisterFrameForUnitEvents = FrameUtil.RegisterFra
 --[[-----------------------------------------------------------------------------
 Local Vars
 -------------------------------------------------------------------------------]]
-local ns = MBP_Namespace(...)
-local O, LibStub, M = ns:LibPack()
-local AceEvent, GC = O.AceLibrary.AceEvent, O.GlobalConstants
+--- @type Namespace
+local _, ns = ...
+local O, M = ns.O, ns.M
+local GC, LibStub, AceEvent = O.GlobalConstants, O.LibStub, O.AceLibrary.AceEvent
 local E, MSG = GC.E, GC.M
+
 --TODO next localize
 local commandTextFormat = 'Type %s on the console for available commands.'
 
@@ -60,6 +62,7 @@ end
 local function OnPlayerEnteringWorld(f, event, ...)
     --p:log('[%s] called...', event)
     local version = GC:GetAddonInfo()
+    --- @type MacrobarPlus
     local addon = f.ctx.addon
     addon.logger:log('%s Initialized. %s', version, sformat(commandTextFormat, GC.C.COMMAND, GC.C.HELP_COMMAND))
     addon:RegisterHooks()

@@ -20,7 +20,6 @@ local addon
 local ns
 addon, ns = ...
 
-local pformat = Kapresoft_LibUtil.PrettyPrint.pformat
 local addonShortName = 'MacrobarPlus'
 local consoleCommand = "mbp"
 local globalVarName = "MBP"
@@ -34,6 +33,16 @@ local debugMode = globalVarPrefix .. 'DEBUG_MODE'
 local ADDON_INFO_FMT = '%s|cfdeab676: %s|r'
 local TOSTRING_ADDON_FMT = '|cfdfefefe{{|r|cfdeab676%s|r|cfdfefefe}}|r'
 local TOSTRING_SUBMODULE_FMT = '|cfdfefefe{{|r|cfdeab676%s|r|cfdfefefe::|r|cfdfbeb2d%s|r|cfdfefefe}}|r'
+
+--- @type Kapresoft_LibUtil_ColorDefinition2
+local colorDef = {
+    --- @type Color
+    primary   = CreateColorFromHexString('ff5F62CC'),
+    --- @type Color
+    secondary = CreateColorFromHexString('ffbbbbcc'),
+    --- @type Color
+    tertiary = CreateColorFromHexString('ffccbbcc'),
+}
 
 --[[-----------------------------------------------------------------------------
 Support Functions
@@ -53,40 +62,13 @@ local function ToStringFunction(moduleName)
     if moduleName then return function() return string.format(TOSTRING_SUBMODULE_FMT, name, moduleName) end end
     return function() return string.format(TOSTRING_ADDON_FMT, name) end
 end
-local function InitGlobalVars()
+
+local function InitGlobalVars(varPrefix)
     if 'table' ~= type(_G[dbName]) then _G[dbName] = {} end
     if 'number' ~= type(_G[logLevel]) then _G[logLevel] = 1 end
     if 'boolean' ~= type(_G[debugMode]) then _G[debugMode] = false end
 end
-InitGlobalVars()
-
-
----@class LocalLibStub : LibStub
-local S = {}
-
----@param moduleName string
----@param optionalMinorVersion number
-function S:NewLibrary(moduleName, optionalMinorVersion)
-    ---use Ace3 LibStub here
-    ---@type BaseLibraryObject
-    local o = LibStub:NewLibrary(LibName(moduleName), optionalMinorVersion or 1)
-    assert(o, sformat("Module not found: %s", tostring(moduleName)))
-    o.mt = getmetatable(o) or {}
-    o.mt.__tostring = ns.ToStringFunction(moduleName)
-    setmetatable(o, o.mt)
-    ns:Register(moduleName, o)
-    ---@type Logger
-    local loggerLib = LibStub(LibName(ns.M.Logger), 1)
-    o.logger = loggerLib:NewLogger(moduleName)
-    return o
-end
-
----@param moduleName string
----@param optionalMinorVersion number
-function S:GetLibrary(moduleName, optionalMinorVersion) return LibStub(LibName(moduleName), optionalMinorVersion or 1) end
-
-S.mt = { __call = function (_, ...) return S:GetLibrary(...) end }
-setmetatable(S, S.mt)
+InitGlobalVars(globalVarPrefix)
 
 --[[-----------------------------------------------------------------------------
 GlobalConstants
@@ -106,6 +88,8 @@ local function GlobalConstantProperties(o)
         VAR_NAME = globalVarName,
         CONSOLE_COMMAND_NAME = consoleCommand,
         DB_NAME = dbName,
+        LOG_LEVEL_VAR_NAME = logLevel,
+        COLOR_DEF = colorDef,
         CHECK_VAR_SYNTAX_FORMAT = '|cfdeab676%s ::|r %s',
         CONSOLE_HEADER_FORMAT = '|cfdeab676### %s ###|r',
         CONSOLE_OPTIONS_FORMAT = '  - %-8s|cfdeab676:: %s|r',
@@ -192,12 +176,9 @@ local function Methods(o)
         )
     end
 
+    o.LibName = LibName
+    o.ToStringFunction = ToStringFunction
 end
 
 GlobalConstantProperties(L)
 Methods(L)
-
-ns.LibName = LibName
-ns.ToStringFunction = ToStringFunction
----@type LocalLibStub
-ns.LibStub = S

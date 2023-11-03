@@ -6,12 +6,13 @@ local sformat = string.format
 --[[-----------------------------------------------------------------------------
 Local Vars
 -------------------------------------------------------------------------------]]
-local ns = MBP_Namespace(...)
-local O, LibStub, M = ns.O, ns.LibStub, ns.M
-
-local GC, ACE = O.GlobalConstants, O.AceLibrary
+--- @type Namespace
+local _, ns = ...
+local O, M  = ns.O, ns.M
+local KO, GC, LibStub, ACE = ns:KO(), O.GlobalConstants, O.LibStub, O.AceLibrary
 local AceConfig, AceConfigDialog = ACE.AceConfig, ACE.AceConfigDialog
-local IsEmptyTable = O.LU.Table.isEmpty
+
+local IsEmptyTable = KO.Table.isEmpty
 
 
 --[[-----------------------------------------------------------------------------
@@ -32,7 +33,7 @@ local function Methods(o)
     --- Usage:  local instance = OptionsMixin:New(addon)
     --- @param addon MacrobarPlus
     --- @return OptionsMixin
-    function o:New(addon) return K_CreateAndInitFromMixin(o, addon) end
+    function o:New(addon) return KO.Mixin:CreateAndInitFromMixin(o, addon) end
 
     function o:CreateOptions()
         local options = {

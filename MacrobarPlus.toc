@@ -1,4 +1,4 @@
-## Interface: 100002
+## Interface: 100107
 ## Version: @project-version@
 ## Title: Macrobar|cff1784d1Plus|r Retail
 ## Notes: Macro actionbar addon for World of Warcraft

@@ -6,24 +6,23 @@ local sformat, unpack = string.format, unpack
 --[[-----------------------------------------------------------------------------
 Local Vars
 -------------------------------------------------------------------------------]]
-local LibStub = LibStub
-local ns = MBP_Namespace(...)
-local O, LibStubLocal, M = ns:LibPack()
-local GC, ACE, Table, String = O.GlobalConstants, O.AceLibrary, O.LU.Table, O.LU.String
+--- @type Namespace
+local _, ns = ...
+local O, GC, M, LibStub = ns.O, ns.O.GlobalConstants, ns.M, ns.O.LibStub
+local KO = ns:KO()
+
+local ACE, Table, String, LoggerMixin = O.AceLibrary, KO.Table, KO.String, KO.LoggerMixin
 local AceConfigDialog = ACE.AceConfigDialog
 local toStringSorted, pformat = Table.toStringSorted, O.pformat
 local IsBlank, IsAnyOf, IsEmptyTable = String.IsBlank, String.IsAnyOf, Table.isEmpty
 
 ---@class MacrobarPlus
-local A = LibStub("AceAddon-3.0"):NewAddon(ns.name, "AceConsole-3.0", "AceEvent-3.0", "AceHook-3.0")
+local A = ns.O.AceLibStub("AceAddon-3.0"):NewAddon(ns.name, "AceConsole-3.0", "AceEvent-3.0", "AceHook-3.0")
 local mt = getmetatable(A) or {}
 mt.__tostring = ns.ToStringFunction()
-local p = O.Logger:NewLogger()
+
+local p = LoggerMixin:NewLogger(ns.name, GC.C.LOG_LEVEL_VAR_NAME , GC.C.COLOR_DEF)
 A.logger = p
-
---setmetatable(A, mt)
-ns['addon'] = A
-
 
 --[[-----------------------------------------------------------------------------
 Methods
@@ -62,10 +61,14 @@ local function Methods(o)
             self:SlashCommand_OpenConfig(); return
         end
         if IsAnyOf('info', unpack(args)) then
-            self:SlashCommand_InfoHandler(); return
+            self:SlashCommand_Info_Handler(); return
         end
         -- Otherwise, show help
         self:SlashCommand_Help_Handler()
+    end
+
+    function o:SlashCommand_Info_Handler()
+        p:log(GC:GetAddonInfoFormatted())
     end
 
     function o:SlashCommand_Help_Handler()

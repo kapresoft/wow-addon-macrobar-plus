@@ -1,9 +1,13 @@
 --[[-----------------------------------------------------------------------------
 Local Vars
 -------------------------------------------------------------------------------]]
-local O, LibStub, M = MBP_LibPack(...)
-local GC, AceDB = O.GlobalConstants, O.AceLibrary.AceDB
-local IsEmptyTable = O.LU.Table.isEmpty
+--- @type Namespace
+local _, ns = ...
+local O, M = ns.O, ns.M
+local KO, GC, LibStub, AceDB = ns:KO(), O.GlobalConstants, O.LibStub, O.AceLibrary.AceDB
+
+local IsEmptyTable = KO.Table.isEmpty
+
 --[[-----------------------------------------------------------------------------
 New Instance
 -------------------------------------------------------------------------------]]
@@ -42,7 +46,7 @@ local function Methods(o)
     --- Usage:  local instance = AceDbInitializerMixin:New(addon)
     --- @param addon MacrobarPlus
     --- @return AceDbInitializerMixin
-    function o:New(addon) return K_CreateAndInitFromMixin(o, addon) end
+    function o:New(addon) return KO.Mixin:CreateAndInitFromMixin(o, addon) end
 
     ---@return AceDB
     function o:GetDB() return self.addon.db end
